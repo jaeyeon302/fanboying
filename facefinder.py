@@ -1,17 +1,17 @@
 import face_recognition
 import cv2
 import os
-from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 from moviepy.tools import subprocess_call
 from moviepy.config import get_setting
 from moviepy.editor import VideoFileClip, AudioFileClip
 from moviepy.audio.AudioClip import concatenate_audioclips
 
-TARGET_FACE_IMG_PATH = "./jihyo.jpg"#"./jeon.jpg"
-OUTPUT_VIDEO_PATH = "fancy_jihyo.mp4"#"./test.mp4"
-INPUT_VIDEO_PATH = "fancy_test.mp4"#"./jeon.mp4"
 
-__TOLERANCE = 0.4
+TARGET_FACE_IMG_PATH = "./jeon.jpg" #"./jihyo.jpg"#"./jeon.jpg"
+OUTPUT_VIDEO_PATH = "./only_jeon.mp4"#"./fancy_jihyo2.mp4"#"./test.mp4"
+INPUT_VIDEO_PATH = "./melo_test.mp4"#"./videoplayback-2.mp4"#"./jeon.mp4"
+
+__TOLERANCE = 0.3
 __STD_PROCESS_VIDEO_WIDTH = 320
 __SUB_CLIPS_DIR = "./subclips"
 
@@ -23,7 +23,7 @@ def find_target_face(input_video,target_face_encoding,
 
     is_saved = False
     
-    video_frame_length = int(input_video.get(cv2.CAP_PROP_FRAME_COUNT))//4
+    video_frame_length = int(input_video.get(cv2.CAP_PROP_FRAME_COUNT))
     video_fps = input_video.get(cv2.CAP_PROP_FPS)
     video_frame_width = int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH))
 
@@ -34,48 +34,55 @@ def find_target_face(input_video,target_face_encoding,
         resize = lambda frame: frame
 
     def check_frame_has_target_face(frame):
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
             
         match = face_recognition.compare_faces(face_encodings, target_face_encoding, tolerance=tolerance)
         if sum(match):return True
         else: return False
+    
+    def wrap_checker(checker_function, resize_function):
+        section_start = 0
+        is_saved = False
+        def func(frame, frame_number):
+            nonlocal is_saved, section_start
 
-    interest_sections = []
-    section_start = 0
-    if analyzing_frame_delta==1:
-        for frame_number in range(0,video_frame_length):
-            print("{} / {}".format(frame_number,video_frame_length))
-            ret, frame = input_video.read()
-            resized_frame = resize(frame)
+            resized_frame = resize_function(frame)
             rgb_frame = resized_frame[:, :, ::-1]
-            matched = check_frame_has_target_face(rgb_frame)
-
+            matched = checker_function(rgb_frame)
             if matched and not is_saved:
                 print("My bias appears! at {} frame".format(frame_number))
                 is_saved = True
                 section_start = frame_number
+                return None
             elif not matched and is_saved:
                 print("My bias disappears! at {} frame".format(frame_number))
                 is_saved = False
-                interest_sections.append((section_start,frame_number))
+                return (section_start,frame_number)
+            else:
+                return None
+
+        return func
+
+    interest_sections = []
+
+    get_target_section = wrap_checker(check_frame_has_target_face, resize)
+    if analyzing_frame_delta==1:
+        for frame_number in range(0,video_frame_length):
+            print("{} / {}".format(frame_number,video_frame_length))
+            ret, frame = input_video.read()
+            result = get_target_section(frame,frame_number)
+            if result: 
+                interest_sections.append(result)
+
     else:
         for frame_number in range(0, video_frame_length, analyzing_frame_delta):
             print("{} / {}".format(frame_number,video_frame_length))
             input_video.set(cv2.CAP_PROP_POS_FRAMES,frame_number)
             ret, frame = input_video.read()
-            resized_frame = resize(frame)
-            rgb_frame = resized_frame[:, :, ::-1]
-            matched = check_frame_has_target_face(rgb_frame)
-
-            if matched and not is_saved:
-                print("My bias appears! at {} frame".format(frame_number))
-                is_saved = True
-                section_start = frame_number
-            elif not matched and is_saved:
-                print("My bias disappears! at {} frame".format(frame_number))
-                is_saved = False
-                interest_sections.append((section_start,frame_number))
+            result = get_target_section(frame,frame_number)
+            if result:
+                interest_sections.append(result)
 
     return interest_sections
 
@@ -127,6 +134,10 @@ if __name__ == "__main__":
                                         std_process_video_width=__STD_PROCESS_VIDEO_WIDTH,
                                         analyzing_frame_delta=1,
                                         tolerance=__TOLERANCE)
+
+    if len(matched_frame_section) == 0 :
+        print("No my bias in this video!!")
+        exit
     matched_time_section = convert_section_from_frames_to_secs(matched_frame_section, input_video.get(cv2.CAP_PROP_FPS))
 
     tmp_video_file = "tmp.mp4"
@@ -139,8 +150,8 @@ if __name__ == "__main__":
     edited_audio.write_audiofile(tmp_audio_file)
     ffmpeg_merge_video_audio(tmp_video_file ,tmp_audio_file, OUTPUT_VIDEO_PATH)
 
-    os.remove(tmp_video_file)
-    os.remove(tmp_audio_file)
+    #os.remove(tmp_video_file)
+    #os.remove(tmp_audio_file)
 
     input_video.release()
 
