@@ -10,7 +10,7 @@ import multiprocessing
 import time
 
 TARGET_FACE_IMG_PATH = "./jeon.jpg"         #picture of my bias
-OUTPUT_VIDEO_PATH = "./only_jeon_multi.mp4" #name of edited video
+OUTPUT_VIDEO_PATH = "./only_jeon_multi10.mp4" #name of edited video
 INPUT_VIDEO_PATH = "./jeon.mp4"             #name of 
 
 __TOLERANCE = 0.4
@@ -106,26 +106,51 @@ def main(target_face_img_name,input_video_file_name,output_file_name,std_process
     #start multiprocessing!
     #reference1 : https://pythonspeed.com/articles/python-multiprocessing/ # 왜 내 pool은 멈출까...
     #reference2 : https://stackoverflow.com/questions/25825995/python-multiprocessing-only-one-process-is-running 
-    matched_frame_section = []
+    matched_frame_sections = []
     with multiprocessing.get_context("spawn").Pool(num_of_cpu, initializer = child_initializer, 
                                 initargs=(target_face_encoding, resizing_scale, 1, tolerance)) as pool:
         results = [pool.apply_async(find_target_face,(input_video_file_name, frame_range)) for frame_range in frame_ranges]
         for res in results:
-            matched_frame_section.extend(res.get())
+            matched_frame_sections.extend(res.get())
     
-    matched_time_section = convert_section_from_frames_to_secs(matched_frame_section,fps)
+    matched_frame_sections = expand_sections(matched_frame_sections,10)
+
+    matched_time_sections = convert_section_from_frames_to_secs(matched_frame_sections,fps)
     tmp_video_file_name = "tmp.mp4"
     tmp_audio_file_name = "tmp.mp3"
 
     #generate edited video and audo then merge them
-    cv2_save_frames(input_video,matched_frame_section,tmp_video_file_name)
-    trim_audio_to_audio_subclips(input_video_file_name,matched_time_section,tmp_audio_file_name)
-    ffmpeg_merge_video_audio(tmp_video_file_name,tmp_audio_file_name,output_file_name)
+    cv2_save_frames(input_video, matched_frame_sections, tmp_video_file_name)
+    trim_audio_to_audio_subclips(input_video_file_name, matched_time_sections, tmp_audio_file_name)
+    ffmpeg_merge_video_audio(tmp_video_file_name, tmp_audio_file_name, output_file_name)
 
     os.remove(tmp_video_file_name)
     os.remove(tmp_audio_file_name)
 
     input_video.release()
+
+def expand_sections(frame_section_list, frame_number_to_expand = 2):
+    expanded_sections = [(s-frame_number_to_expand, e + frame_number_to_expand) for s,e in frame_section_list]
+    merged_sections = []
+    last_e = 0
+    for section, next_section in zip(expanded_sections[:-1], expanded_sections[1:]):
+        next_s, next_e = next_section 
+        #if the last merged section overlaps next_section
+        if last_e > next_s :
+            last_s, _ = merged_sections[-1]
+            merged_sections[-1] =  (last_s, next_e)
+            last_e = next_e
+            
+        else:
+            s, e = section
+            #otherwhise (not overlaped)
+            if next_s <= e:
+                merged_sections.append((s,next_e))
+            else:
+                merged_sections.append(section)
+                merged_sections.append(next_section)
+
+    return merged_sections
 
 def convert_section_from_frames_to_secs(section_list,fps,round_num=None):
     """
@@ -143,10 +168,16 @@ def cv2_save_frames(input_video,interest_sections,output_file_name):
     fps = input_video.get(cv2.CAP_PROP_FPS)
     width = int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(input_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_length = int(input_video.get(cv2.CAP_PROP_FRAME_COUNT))
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     output_video = cv2.VideoWriter(output_file_name, fourcc, fps, (width, height))
     idx = 0
-    for (s,e) in interest_sections:
+    for s,e in interest_sections:
+        #calibrate the frame range exceeding the original video frame counts
+        #This exceeding was occured during expanding the frame sections
+        if s < 0 : s = 0
+        elif e > frame_length : e = frame_length
+
         input_video.set(cv2.CAP_PROP_POS_FRAMES,s)
         print("{} / {} clips saved".format(idx+1,len(interest_sections)))
         for frame_number in range(s,e):
