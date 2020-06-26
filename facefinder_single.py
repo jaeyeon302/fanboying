@@ -1,27 +1,25 @@
 import face_recognition
 import cv2
 import os
+from collections import namedtuple as nt
 from moviepy.tools import subprocess_call
 from moviepy.config import get_setting
 from moviepy.editor import VideoFileClip, AudioFileClip
 from moviepy.audio.AudioClip import concatenate_audioclips
-
+import multiprocessing
+import time
 
 TARGET_FACE_IMG_PATH = "./jeon.jpg" #"./jihyo.jpg"#"./jeon.jpg"
-OUTPUT_VIDEO_PATH = "./only_jeon.mp4"#"./fancy_jihyo2.mp4"#"./test.mp4"
-INPUT_VIDEO_PATH = "./melo_test.mp4"#"./videoplayback-2.mp4"#"./jeon.mp4"
+OUTPUT_VIDEO_PATH = "./only_jeon_single.mp4"#"./fancy_jihyo2.mp4"#"./test.mp4"
+INPUT_VIDEO_PATH = "./jeon.mp4"#"./videoplayback-2.mp4"#"./jeon.mp4"
 
-__TOLERANCE = 0.3
+__TOLERANCE = 0.4
 __STD_PROCESS_VIDEO_WIDTH = 320
-__SUB_CLIPS_DIR = "./subclips"
-
 
 def find_target_face(input_video,target_face_encoding, 
                     std_process_video_width=320, 
                     analyzing_frame_delta=1,
                     tolerance=0.4):
-
-    is_saved = False
     
     video_frame_length = int(input_video.get(cv2.CAP_PROP_FRAME_COUNT))
     video_fps = input_video.get(cv2.CAP_PROP_FPS)
@@ -120,9 +118,10 @@ def ffmpeg_merge_video_audio(video_file_name,audio_file_name,output_file_name):
     print(cmd)
     subprocess_call(cmd)
 
+    
 
 if __name__ == "__main__":
-    
+    start = time.time()
     #load video
     input_video = cv2.VideoCapture(INPUT_VIDEO_PATH)
 
@@ -154,6 +153,8 @@ if __name__ == "__main__":
     #os.remove(tmp_audio_file)
 
     input_video.release()
+    print("Processing Time: {}".format(time.time()-start))
+    
 
     
 
