@@ -9,13 +9,13 @@ from moviepy.audio.AudioClip import concatenate_audioclips
 import multiprocessing
 import time
 
-TARGET_FACE_IMG_PATH = "jangiha.jpg" #"./jeon.jpg"         #picture of my bias
-OUTPUT_VIDEO_PATH = "jangiha_test.mp4"#"./only_jeon_jtbc_multi.mp4" #name of edited video
-INPUT_VIDEO_PATH = "jangiha.mp4"#"./jeon_test2.mp4"             #name of 
+TARGET_FACE_IMG_PATH = "./jeon.jpg"         #picture of my bias
+OUTPUT_VIDEO_PATH = "./only_jeon_jtbc_multi2.mp4" #name of edited video
+INPUT_VIDEO_PATH = "./jeon_test2.mp4"             #name of 
 
 __ANALYZING_FRAME_DELTA = 1
 __TOLERANCE = 0.4
-__STD_PROCESS_VIDEO_WIDTH = 320             
+__STD_PROCESS_VIDEO_WIDTH = 320
 #fixed frame width to process. Frames' height will be resized proportionally
 
 
@@ -51,24 +51,17 @@ def find_target_face(input_video_file_name,frame_range):
             input_video.set(cv2.CAP_PROP_POS_FRAMES,frame_number)
 
         ret, frame = input_video.read()
-        frame = resize(frame)
         #BGR color space(opencv used) -> RGB color space(face_recognition used)
         frame = frame[:, :, ::-1]
+        resized_frame = resize(frame)
         
-        #check frame
-        timestamp_location = time.time()
-        face_locations = face_recognition.face_locations(frame)
-        timestamp_encoding = time.time()
-        face_encodings = face_recognition.face_encodings(frame,face_locations)
-        timestamp_compare = time.time()
-        match = face_recognition.compare_faces(face_encodings, target_face_encoding, tolerance=tolerance)
-        timestamp_compare_end = time.time()
-        print("({}) find_loc: {} s | encoding: {} s | compare: {} s".format(
-            timestamp_compare_end=
-            timestamp_encoding-timestamp_location,
-            timestamp_compare-timestamp_encoding,
-            timestamp_compare_end-timestamp_compare
-        ))
+        #find face location using resized small frame
+        face_locations = face_recognition.face_locations(resized_frame) #the most heavy job
+
+        #encoding is not the heavy task. so Used original frame size
+        face_locations = [tuple([int(pos/resizing_scale) for pos in loc]) for loc in face_locations]
+        face_encodings = face_recognition.face_encodings(frame,face_locations)  #the lightest job
+        match = face_recognition.compare_faces(face_encodings, target_face_encoding, tolerance=tolerance) #similar with encoding
 
         matched = False if sum(match) == 0 else True
 
@@ -107,7 +100,7 @@ def main(target_face_img_name, input_video_file_name, output_file_name, std_proc
     input_video.release()
 
     #divide jobs
-    num_of_cpu = 1#multiprocessing.cpu_count()
+    num_of_cpu = multiprocessing.cpu_count()
     frame_per_cpu = frame_length // num_of_cpu
     frame_ranges = [(frame_per_cpu*(cpu_idx),frame_per_cpu*(cpu_idx+1)) for cpu_idx in range(0,num_of_cpu-1) ]
     frame_ranges.append((frame_per_cpu*(num_of_cpu-1), frame_length))
