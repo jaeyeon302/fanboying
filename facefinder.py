@@ -1,7 +1,6 @@
 import face_recognition
 import cv2
 import multiprocessing
-import time
 import os
 
 global target_face_encoding, resizing_scale, analyzing_frame_delta, tolerance
