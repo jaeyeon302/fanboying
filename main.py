@@ -49,8 +49,8 @@ def main(input_video_file_name, target_face_img_file_name, output_video_file_nam
     end_time = time.time()
 
     output_Video_meta = videoEditor.Video_meta(output_video_file_name)
-    print("original video length : {} sec".format(video_meta.frame_length*video_meta.fps))
-    print("result video length : {} sec".format(output_Video_meta.frame_length*output_Video_meta.fps))
+    print("original video length : {} sec".format(video_meta.frame_length/video_meta.fps))
+    print("result video length : {} sec".format(output_Video_meta.frame_length/output_Video_meta.fps))
     print("processing time : {} sec".format(end_time-start_time))
     print("done!")
 
