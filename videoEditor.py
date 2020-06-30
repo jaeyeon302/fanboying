@@ -11,7 +11,7 @@ class Video_meta():
         self.file_name = video_file_name
         video = cv2.VideoCapture(video_file_name)
         self.fps = int(video.get(cv2.CAP_PROP_FPS))
-        self.frame_length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))//16
+        self.frame_length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         w = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_size = (w,h)
