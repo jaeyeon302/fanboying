@@ -10,7 +10,7 @@ class Video_meta():
     def __init__(self,video_file_name):
         self.file_name = video_file_name
         video = cv2.VideoCapture(video_file_name)
-        self.fps = int(video.get(cv2.CAP_PROP_FPS))
+        self.fps = video.get(cv2.CAP_PROP_FPS)
         self.frame_length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         w = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -95,7 +95,7 @@ def cv2_save_frames(video_meta, interest_sections, output_file_name):
         idx+=1
     input_video.release()
 
-def trim_original_audio_to_audio_subclips(input_video_file_name,matched_time_section,output_file_name):
+def trim_original_audio_to_audio_subclips(input_video_file_name, matched_time_section, output_file_name):
     """
     save edited audio where my bias appeared in video
     """

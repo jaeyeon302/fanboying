@@ -2,9 +2,9 @@ import facefinder
 import videoEditor
 import os
 
-INPUT_VIDEO_FILE_NAME = "jeon.mp4"
-OUTPUT_VIDEO_FILE_NAME = "jeon_module_test.mp4"
-TARGET_FACE_IMG_FILE_NAME = "jeon.jpg"
+INPUT_VIDEO_FILE_NAME = "jangiha.mp4"
+OUTPUT_VIDEO_FILE_NAME = "jangiha_module_test.mp4"
+TARGET_FACE_IMG_FILE_NAME = "jangiha.jpg"
 
 __TOLERANCE = 0.4
 __STD_PROCESS_VIDEO_WIDTH = 320
