@@ -61,9 +61,9 @@ def test():
     TARGET_FACE_IMG_FILE_NAME = "jangiha.jpg"
 
     main(INPUT_VIDEO_FILE_NAME,TARGET_FACE_IMG_FILE_NAME,OUTPUT_VIDEO_FILE_NAME)
-    
+
 def expand_path(path):
-    return os.path.abspah(os.path.expanduser(path))
+    return os.path.abspath(os.path.expanduser(path))
 
 def existed_file_path(path):
     #reference : https://stackoverflow.com/questions/38834378/path-to-a-directory-as-argparse-argument
