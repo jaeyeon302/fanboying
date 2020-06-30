@@ -135,7 +135,6 @@ def main(target_face_img_name, input_video_file_name, output_file_name, std_proc
     os.remove(tmp_audio_file_name)
 
     
-
 def expand_sections(frame_section_list, frame_number_to_expand = 2):
     if frame_number_to_expand == 0 :
         return frame_section_list
