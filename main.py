@@ -75,9 +75,9 @@ def existed_file_path(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="fanboying", description='edit the video for my bias')
-    parser.add_argument("--input-video", "-i", type=existed_file_path,help="video file path to process")
-    parser.add_argument("--my-bias-img", "-b", type=existed_file_path,help="img file having your bias's face")
-    parser.add_argument("--output-video","-o", type=str,help="output video file name")
+    parser.add_argument("--input-video", "-i", type=existed_file_path, required=True, help="video file path to process")
+    parser.add_argument("--my-bias-img", "-b", type=existed_file_path, required=True, help="img file having your bias's face")
+    parser.add_argument("--output-video","-o", type=str, required=True, help="output video file name")
     
     args = parser.parse_args()
     output_video = expand_path(args.output_video)
