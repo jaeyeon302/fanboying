@@ -6,6 +6,10 @@
 ```bash
 python3 main.py -i <input_video_filename> -b <bias_img_filename> -o <output_video_filename>
 ```
+### 권장 파일 포멧
+- `input_video_filename` : mp4
+- `bias_img_filename` : jpg
+- `output_video_filename` : mp4
 
 ## 필요한 패키지
 - [face_recognition](https://github.com/ageitgey/face_recognition/blob/master/README_Korean.md) _(ver:1.3.0)_
